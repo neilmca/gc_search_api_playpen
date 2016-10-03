@@ -1,8 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2011 Google Inc. All Rights Reserved.
 
-"""A simple guest book app that demonstrates the App Engine search API."""
 
 import logging
 from cgi import parse_qs
@@ -13,9 +11,10 @@ import os
 import string
 import urllib
 from urlparse import urlparse
-from configuration import Configurations
+from properties_store import Properties
 import json
 import webapp2
+from serving_property_set_store import ServingPropertSet
 
 
 
@@ -32,73 +31,119 @@ class BaseHandler(webapp2.RequestHandler):
     def render_template(self, filename, template_args):
       self.response.write(self.jinja2.render_template(filename, **template_args))
 
+def split_path(path):
+    #strip leading /
+    path = re.sub('^/', '', path)
+    
+    #if there is still a '/ then it means community lookup code is included
+    path_split = path.split('/')
 
-class MainPage(BaseHandler):
+    if len(path_split) < 4:
+        #should be something like /mtv1/ios/3.2/properties
+        webapp2.abort(400, detail="invalid number of params")
+
+    return {'community':path_split[0], 'platform': path_split[1], 'app_version':path_split[2]}
+
+class PropertiesHandler(BaseHandler):
     """Handles search requests for comments."""
 
-
+    #Example: GET /mtv1/ios/3.2/properties - gets property set for serving version
+    #Example: GET /mtv1/ios/3.2/properties?version={v} - gets named version property set
+    #Example: POST /mtv1/ios/3.2/properties?key={k} - add key to default version
+    #Example: POST /mtv1/ios/3.2/properties?key={k}&version={v} - add key to specific version
 
     def get(self):
-        """Handles a get request with a query."""
-        self.response.write(' POST or GET to /configuration?key=[key]')
+        """Handles a get request to get all keys in property set."""
+        
+        path_split = split_path(self.request.path)
 
-class ConfigurationHandler(BaseHandler):
-    """Handles requests to index comments."""
+        #get serving version
+        version = self.request.get('version')
+        if version == None or version == '':
+            resp = ServingPropertSet.get(community=path_split['community'], platform = path_split['platform'], app_version = path_split['app_version'])
+            version = resp['serving_version']
+            
 
-    def put(self):
-        """Handles a post request."""
- 
 
-          
+        resp = Properties.get(community=path_split['community'], platform = path_split['platform'], app_version = path_split['app_version'], property_set_version = version)
 
-        key = self.request.get('key')
-        body = None        
+        self.response.write(resp)
+
+    def post(self):
+        """Handles a post request to add keys"""   
+
+        path_split = split_path(self.request.path)       
+
+        key = self.request.get('key') 
         if key == None or key == '':
              self.response.write('key not specified')
              return
 
-
-        #
-
+        body = None 
         body = self.request.body
         if body == None or body =='':
             self.response.write('body not specified')
             return
 
         
-        if self.request.content_type != "application/json" and self.request.content_type != Configurations.ContentText:
+        if self.request.content_type != Properties.ContentJSON and self.request.content_type != Properties.ContentText:
             webapp2.abort(400, 'invalid content_type only application/json and text/plain are supported')      
         else:
-            resp = Configurations.store(key, self.request.content_type, body)
+            resp = Properties.put_key(community=path_split['community'], platform = path_split['platform'], app_version = path_split['app_version'], name = key, type = self.request.content_type, value = body, property_set_version = self.request.get('version'))
 
         if resp != 200:
             webapp2.abort(resp, 'error writing key-value')  
 
+    
+class ServingPropertySetHandler(BaseHandler):
+    """Handles search requests for comments."""
 
-        
+    #Example: GET /mtv1/ios/3.2/servingVersion
+    #Example: GET /mtv1/ios/3.2/servingVersion
+    #Example: PUT /mtv1/ios/3.2/servingVersion?version={v}
 
     def get(self):
-        """Handles a post request."""
-        #key = self.request.get_json('key')
-        key = self.request.get('key')
-        val = None
-        if key != None:
-            val = Configurations.get(key)
+        """Handles a get request to get the serving property set"""
+        
+        path_split = split_path(self.request.path)
+        resp = ServingPropertSet.get(community=path_split['community'], platform = path_split['platform'], app_version = path_split['app_version'])
+        self.response.write(json.dumps(resp,indent = 2, sort_keys=True, separators=(',', ': ')))
 
-        if val == None or val == '':
-            self.response.write('key not found=%s' % key)
-            return
+    def put(self):
+        """Handles a get request to get the serving property set"""
 
-        logging.info(val)
-        self.response.headers['Content-Type'] = val['type'].encode('utf8')
-        self.response.write(val['value'])
+        version = self.request.get('version') 
+        if version == None or version == '':
+             self.response.write('version not specified')
+             return
+        
+        path_split = split_path(self.request.path)
+        resp = ServingPropertSet.putVersion(community=path_split['community'], platform = path_split['platform'], app_version = path_split['app_version'], version = version)
+        
 
+        self.response.write(resp)
+
+
+
+class MainHandler(BaseHandler):
+    """Handles search requests for comments."""
+
+
+
+    def get(self):
+        """Handles a get request with a query."""
+        
+
+        self.response.write('Main')
+
+   
 logging.getLogger().setLevel(logging.DEBUG)
 
 
 application = webapp2.WSGIApplication(
-    [('/', MainPage),
-     ('/configuration', ConfigurationHandler)],
+    [('/.*/properties', PropertiesHandler),
+     ('/.*/servingVersion', ServingPropertySetHandler),
+     ('/.*', MainHandler)],
     debug=True)
 
 

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>appStoreReviewURL</key>
+	<string>https://itunes.apple.com/gb/app/mtv-tracks/id925265172</string>
+	<key>rule1</key>
+	<dict>
+		<key>type</key>
+		<string>qualifiedPlays</string>
+		<key>value</key>
+		<integer>2</integer>
+	</dict>
+	<key>rule2</key>
+	<dict>
+		<key>type</key>
+		<string>qualifiedPlays</string>
+		<key>value</key>
+		<integer>3</integer>
+	</dict>
+</dict>
+</plist>

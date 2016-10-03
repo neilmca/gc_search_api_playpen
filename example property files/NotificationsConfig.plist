@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>enableDownloadOver3GByDefault</key>
+	<true/>
+	<key>bubbleNotificationTypeIconsToAnimated</key>
+	<array>
+		<string>MQNotificationIconButtonTypeNewContentAvailable</string>
+		<string>MQNotificationIconButtonTypeTracksDownloading</string>
+	</array>
+	<key>bubbleAutoDismissSecondsInterval</key>
+	<integer>8</integer>
+	<key>pushReminderHoursInterval</key>
+	<integer>72</integer>
+	<key>pushExplanationHoursInterval</key>
+	<string>72</string>
+	<key>localNotificationDaysAfterFirstLaunchToRemindOfActivation</key>
+	<array/>
+	<key>localNotificationRemindToPlayTrack</key>
+	<dict>
+		<key>daysAfterActivation</key>
+		<integer>1</integer>
+		<key>time_HH:MM_24hrs</key>
+		<string>15:20</string>
+	</dict>
+	<key>commitmentNotificationDaysBeforeFreeTrialEnds</key>
+	<array>
+		<integer>3</integer>
+		<integer>2</integer>
+		<integer>1</integer>
+	</array>
+</dict>
+</plist>
