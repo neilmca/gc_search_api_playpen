@@ -12,7 +12,6 @@ class Properties(ndb.Model):
     app_version = ndb.StringProperty(indexed=True)
     property_set_version = ndb.StringProperty(indexed=True)
     name = ndb.StringProperty(indexed=True)
-    type = ndb.StringProperty(indexed=False)
     value = ndb.StringProperty(indexed=False)
 
     ContentJSON = 'application/json'
@@ -24,18 +23,11 @@ class Properties(ndb.Model):
 
        results = Properties.query(Properties.community == community, Properties.platform == platform, Properties.app_version == app_version, Properties.property_set_version == property_set_version).fetch()
 
-       properties = []
+       properties = {}
        for res in results:
-          if res.type == Properties.ContentJSON:
-               body = json.loads(res.value)
-               val = body
-          else:
-               val = res.value
-          properties.append({
-            'type' : res.type,
-            'key' : res.name,
-            'value' : val,
-            })
+          val_json = json.loads(res.value)
+          properties[res.name] = val_json['value']
+
        jObj = {
         'properties' : properties, 
         'meta': 
@@ -48,7 +40,6 @@ class Properties(ndb.Model):
           }
         }
 
-       logging.info(jObj)
        return json.dumps(jObj,indent = 2, sort_keys=True, separators=(',', ': '))
 
 
@@ -56,36 +47,20 @@ class Properties(ndb.Model):
 
 
     @staticmethod
-    def put_key(community, platform, app_version, name, type, value, property_set_version = ''):   
+    def put_keys(community, platform, app_version, keys, property_set_version = ''):   
 
         if property_set_version == '':
           property_set_version = 'default'
 
-        if type != Properties.ContentJSON and type != Properties.ContentText:
-          return 400;
-        else:
-
-          if type == Properties.ContentJSON:
-
-            try:
-                body = json.loads(value)
-            except Exception, e:
-                logging.exception(e)            
-                return 400
-            else:
-                pass
-            finally:
-                pass
-
-            jsonStr = json.dumps(body, sort_keys=True, indent=4)
-            value = jsonStr
-
+        for key in keys:
+          kvp_json = {'key': key, 'value':keys[key]}
+          kvp_str = json.dumps(kvp_json)
           #create hash of fields to form DS key so that we don't create new keys but overwrite existing
-          hash_key = str(hashlib.sha1(community + platform + app_version + property_set_version + name).hexdigest())
-          ds = Properties(community=community, platform=platform, app_version=app_version, property_set_version=property_set_version, name=name, type=type, value=value, id = hash_key)
+          hash_key = str(hashlib.sha1(community + platform + app_version + property_set_version + key).hexdigest())
+          ds = Properties(community=community, platform=platform, app_version=app_version, property_set_version=property_set_version, name=str(key), value=kvp_str, id = hash_key)
           ds.put()
 
-          return 200
+        return 200
 
   
 

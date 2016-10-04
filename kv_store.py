@@ -49,8 +49,7 @@ class PropertiesHandler(BaseHandler):
 
     #Example: GET /mtv1/ios/3.2/properties - gets property set for serving version
     #Example: GET /mtv1/ios/3.2/properties?version={v} - gets named version property set
-    #Example: POST /mtv1/ios/3.2/properties?key={k} - add key to default version
-    #Example: POST /mtv1/ios/3.2/properties?key={k}&version={v} - add key to specific version
+    #Example: POST /mtv1/ios/3.2/properties?&version={v} - add keys to specific version - body contains keys in json
 
     def get(self):
         """Handles a get request to get all keys in property set."""
@@ -62,8 +61,6 @@ class PropertiesHandler(BaseHandler):
         if version == None or version == '':
             resp = ServingPropertSet.get(community=path_split['community'], platform = path_split['platform'], app_version = path_split['app_version'])
             version = resp['serving_version']
-            
-
 
         resp = Properties.get(community=path_split['community'], platform = path_split['platform'], app_version = path_split['app_version'], property_set_version = version)
 
@@ -72,12 +69,7 @@ class PropertiesHandler(BaseHandler):
     def post(self):
         """Handles a post request to add keys"""   
 
-        path_split = split_path(self.request.path)       
-
-        key = self.request.get('key') 
-        if key == None or key == '':
-             self.response.write('key not specified')
-             return
+        path_split = split_path(self.request.path)     
 
         body = None 
         body = self.request.body
@@ -85,11 +77,16 @@ class PropertiesHandler(BaseHandler):
             self.response.write('body not specified')
             return
 
+        version = self.request.get('version')
+        if version == None or version == '':
+            webapp2.abort(400, 'version not specified')      
         
-        if self.request.content_type != Properties.ContentJSON and self.request.content_type != Properties.ContentText:
-            webapp2.abort(400, 'invalid content_type only application/json and text/plain are supported')      
+        if self.request.content_type != Properties.ContentJSON:
+            webapp2.abort(400, 'invalid content_type only application/json is supported')      
         else:
-            resp = Properties.put_key(community=path_split['community'], platform = path_split['platform'], app_version = path_split['app_version'], name = key, type = self.request.content_type, value = body, property_set_version = self.request.get('version'))
+            #load into json
+            keys = json.loads(body)
+            resp = Properties.put_keys(community=path_split['community'], platform = path_split['platform'], app_version = path_split['app_version'], keys = keys, property_set_version = version)
 
         if resp != 200:
             webapp2.abort(resp, 'error writing key-value')  

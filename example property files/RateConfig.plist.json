@@ -1,0 +1,11 @@
+{
+  "appStoreReviewURL": "https://itunes.apple.com/gb/app/mtv-tracks/id925265172",
+  "rule1": {
+    "type": "qualifiedPlays",
+    "value": 2
+  },
+  "rule2": {
+    "type": "qualifiedPlays",
+    "value": 3
+  }
+}

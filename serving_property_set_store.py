@@ -21,9 +21,9 @@ class ServingPropertSet(ndb.Model):
        	version = set.serving_version
 
        resp = {
-       	'community':set.community, 
-        'platform':set.platform, 
-        'app_version':set.app_version, 
+       	'community':community, 
+        'platform':platform, 
+        'app_version':app_version, 
         'serving_version': version,
        }
        return resp
